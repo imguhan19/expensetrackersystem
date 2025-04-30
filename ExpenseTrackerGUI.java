@@ -1,0 +1,225 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.List;
+
+// Expense interface
+interface Expense {
+    double getAmount();
+    String getCategory();
+    LocalDate getDate();
+}
+
+// Implementations
+class FoodExpense implements Expense {
+    private final double amount;
+    private final LocalDate date;
+
+    public FoodExpense(double amount, LocalDate date) {
+        this.amount = amount;
+        this.date = date;
+    }
+
+    public double getAmount() { return amount; }
+    public String getCategory() { return "Food"; }
+    public LocalDate getDate() { return date; }
+}
+
+class TransportExpense implements Expense {
+    private final double amount;
+    private final LocalDate date;
+
+    public TransportExpense(double amount, LocalDate date) {
+        this.amount = amount;
+        this.date = date;
+    }
+
+    public double getAmount() { return amount; }
+    public String getCategory() { return "Transport"; }
+    public LocalDate getDate() { return date; }
+}
+
+class EntertainmentExpense implements Expense {
+    private final double amount;
+    private final LocalDate date;
+
+    public EntertainmentExpense(double amount, LocalDate date) {
+        this.amount = amount;
+        this.date = date;
+    }
+
+    public double getAmount() { return amount; }
+    public String getCategory() { return "Entertainment"; }
+    public LocalDate getDate() { return date; }
+}
+
+class DressExpense implements Expense {
+    private final double amount;
+    private final LocalDate date;
+
+    public DressExpense(double amount, LocalDate date) {
+        this.amount = amount;
+        this.date = date;
+    }
+
+    public double getAmount() { return amount; }
+    public String getCategory() { return "Dress"; }
+    public LocalDate getDate() { return date; }
+}
+
+// ExpenseTracker class
+class ExpenseTracker {
+    private final List<Expense> expenses = new ArrayList<>();
+
+    public void addExpense(Expense e) {
+        expenses.add(e);
+    }
+
+    public List<Expense> getExpenses() {
+        return expenses;
+    }
+
+    public double getTotalExpense() {
+        return expenses.stream().mapToDouble(Expense::getAmount).sum();
+    }
+
+    public double getMonthlyExpense(int year, int month) {
+        return expenses.stream()
+                .filter(e -> e.getDate().getYear() == year && e.getDate().getMonthValue() == month)
+                .mapToDouble(Expense::getAmount)
+                .sum();
+    }
+}
+
+// GUI class
+public class ExpenseTrackerGUI extends JFrame {
+    private final JTextField amountField = new JTextField(10);
+    private final JTextField dateField = new JTextField(10);
+    private final JTextField monthField = new JTextField(5);
+    private final JTextField yearField = new JTextField(5);
+    private final JTextArea expenseArea = new JTextArea(10, 45);
+    private final JComboBox<String> categoryBox = new JComboBox<>(new String[]{"Food", "Transport", "Entertainment", "Dress"});
+    private final ExpenseTracker tracker = new ExpenseTracker();
+
+    public ExpenseTrackerGUI() {
+        setTitle("Expense Tracker System");
+        setSize(600, 500);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new FlowLayout());
+
+        add(new JLabel("Category:"));
+        add(categoryBox);
+
+        add(new JLabel("Amount:"));
+        add(amountField);
+
+        add(new JLabel("Date (YYYY-MM-DD):"));
+        add(dateField);
+
+        JButton addButton = new JButton("Add Expense");
+        add(addButton);
+
+        add(new JScrollPane(expenseArea));
+        expenseArea.setEditable(false);
+
+        add(new JLabel("Month (MM):"));
+        add(monthField);
+        add(new JLabel("Year (YYYY):"));
+        add(yearField);
+
+        JButton monthlyBtn = new JButton("Monthly Total");
+        JButton totalBtn = new JButton("Total Expense");
+
+        add(monthlyBtn);
+        add(totalBtn);
+
+        // Actions
+        addButton.addActionListener(e -> addExpense());
+        monthlyBtn.addActionListener(e -> viewMonthlyTotal());
+        totalBtn.addActionListener(e -> viewTotalExpense());
+    }
+
+    private void addExpense() {
+        String category = (String) categoryBox.getSelectedItem();
+        String dateText = dateField.getText().trim();
+        String amountText = amountField.getText().trim();
+
+        try {
+            double amount = Double.parseDouble(amountText);
+            LocalDate date = LocalDate.parse(dateText, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
+            Expense expense;
+            switch (category) {
+                case "Food":
+                    expense = new FoodExpense(amount, date);
+                    break;
+                case "Transport":
+                    expense = new TransportExpense(amount, date);
+                    break;
+                case "Entertainment":
+                    expense = new EntertainmentExpense(amount, date);
+                    break;
+                case "Dress":
+                    expense = new DressExpense(amount, date);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid category");
+            }
+
+            tracker.addExpense(expense);
+            displayExpenses();
+
+            // Clear input fields after adding
+            amountField.setText("");
+            dateField.setText("");
+            monthField.setText("");
+            yearField.setText("");
+            categoryBox.setSelectedIndex(0);
+
+            JOptionPane.showMessageDialog(this, "Expense added.");
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Invalid amount.");
+        } catch (DateTimeParseException ex) {
+            JOptionPane.showMessageDialog(this, "Invalid date format. Use YYYY-MM-DD.");
+        }
+    }
+
+    private void viewMonthlyTotal() {
+        try {
+            int month = Integer.parseInt(monthField.getText().trim());
+            int year = Integer.parseInt(yearField.getText().trim());
+
+            if (month < 1 || month > 12) {
+                JOptionPane.showMessageDialog(this, "Month must be between 1 and 12.");
+                return;
+            }
+
+            double total = tracker.getMonthlyExpense(year, month);
+            JOptionPane.showMessageDialog(this, "Total for " + year + "-" + String.format("%02d", month) + ": " + total);
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Enter valid month/year.");
+        }
+    }
+
+    private void viewTotalExpense() {
+        double total = tracker.getTotalExpense();
+        JOptionPane.showMessageDialog(this, "Total Expense: " + total);
+    }
+
+    private void displayExpenses() {
+        expenseArea.setText("");
+        for (Expense e : tracker.getExpenses()) {
+            expenseArea.append("Category: " + e.getCategory() + ", Amount: " + e.getAmount() + ", Date: " + e.getDate() + "\n");
+        }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> new ExpenseTrackerGUI().setVisible(true));
+    }
+}
+
+
